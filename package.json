@@ -1,6 +1,8 @@
 {
   "scripts": {
-    "build": "bookmarklet bookmarklet.js build/output.txt"
+    "build": "bookmarklet bookmarklet.js build/output.txt",
+    "build-mini": "bookmarklet minimarklet.js build/mini.txt",
+    "build-dist": "bookmarklet minimarklet.js dist/output.txt"
   },
   "dependencies": {
     "bookmarklet": "^3.0.0"

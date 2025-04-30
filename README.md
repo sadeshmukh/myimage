@@ -5,8 +5,8 @@ CSS courtesy of ChatGPT.
 
 ## IMPORTANT!
 
-Though CSS is within myimage.css, it is loaded from my media server (which I manually copy).
-If the script ends up becoming too long, I will move it to that server as well.
+The minimarklet.js is a smaller version that pulls it from https://static.sahil.ink/myimage/bookmarklet.js.
+Also, all CSS is pulled from https://static.sahil.ink/myimage/index.css, a clone of myimage.css.
 
 ## Development
 
@@ -17,9 +17,15 @@ npm run build
 
 This will create a bookmarklet in `build/output.txt`.
 
+```bash
+npm run build-mini
+```
+
+This will create a smaller bookmarklet in `build/mini.txt`.
+
 ## Usage
 
-1. Drag the `bookmarklet.js` to your bookmarks bar.
+1. Drag the output in `build/mini.txt` to your bookmarks bar.
 2. Navigate to a page with images.
 3. Click the bookmarklet.
 4. Click on an image to see the image details.
