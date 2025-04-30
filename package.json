@@ -1,0 +1,11 @@
+{
+  "scripts": {
+    "build": "bookmarklet bookmarklet.js build/output.txt"
+  },
+  "dependencies": {
+    "bookmarklet": "^3.0.0"
+  },
+  "devDependencies": {
+    "prettier": "^3.5.3"
+  }
+}
