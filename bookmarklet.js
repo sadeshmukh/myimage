@@ -10,6 +10,54 @@ const existingModals = document.querySelectorAll(".myimage-modal");
 existingOverlays.forEach((overlay) => overlay.remove());
 existingModals.forEach((modal) => modal.remove());
 
+function convertToAscii(image) {
+  image.crossOrigin = "anonymous"; // unprotects the image
+
+  return new Promise((resolve, reject) => {
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+
+    if (!image.complete || !image.naturalWidth) {
+      image.onload = () => processImage();
+    } else {
+      processImage();
+    }
+
+    function processImage() {
+      const targetWidth = 120;
+      const scale = targetWidth / image.naturalWidth;
+      const width = Math.floor(image.naturalWidth * scale * 2); // width must be double since character width is half of the character height
+      const height = Math.floor(image.naturalHeight * scale);
+
+      canvas.width = width;
+      canvas.height = height;
+
+      try {
+        ctx.drawImage(image, 0, 0, width, height);
+        const imageData = ctx.getImageData(0, 0, width, height);
+        const chars = " .:-=+*#%@"; // reversed, since dark background (blank is dark, @ is bright)
+        let ascii = "";
+        const { data, width: imgWidth } = imageData;
+
+        for (let i = 0; i < data.length; i += 4 * imgWidth) {
+          for (let j = 0; j < imgWidth * 4; j += 4) {
+            const r = data[i + j];
+            const g = data[i + j + 1];
+            const b = data[i + j + 2];
+            const avg = (r + g + b) / 3;
+            const index = Math.floor((avg / 255) * (chars.length - 1));
+            ascii += chars[index];
+          }
+          ascii += "\n";
+        }
+        resolve(ascii);
+      } catch (error) {
+        resolve("ASCII art not working");
+      }
+    }
+  });
+}
+
 // because no umd is available (that I could find) this is a bit of a hack
 const loadExtractColors = async () => {
   const module = await import(
@@ -37,9 +85,9 @@ images.forEach((image, index) => {
   //  inner gradient div has the actual styling, container just stops overflow + positions
   const gradientDiv = document.createElement("div");
   gradientDiv.classList.add("gradient");
-  gradientDiv.style.width = "100%";
-  gradientDiv.style.height = "100%";
-  gradientDiv.style.pointerEvents = "none"; // let clicks go through to overlay
+  // gradientDiv.style.width = "100%";
+  // gradientDiv.style.height = "100%";
+  // gradientDiv.style.pointerEvents = "none"; // let clicks go through to overlay
   overlay.appendChild(gradientDiv);
 
   document.body.appendChild(overlay);
@@ -57,6 +105,8 @@ images.forEach((image, index) => {
     const imageDescription = image.title;
     const imageCaption = image.caption;
 
+    const imageAscii = await convertToAscii(image);
+    console.log(imageAscii);
     const modal = document.createElement("div");
     modal.classList.add("myimage-modal");
 
@@ -66,6 +116,30 @@ images.forEach((image, index) => {
     modalImg.title = imageDescription;
     modalImg.setAttribute("caption", imageCaption);
     modalImg.classList.add("modal-image");
+
+    const imageContainer = document.createElement("div");
+    imageContainer.classList.add("image-container");
+
+    const modalImgOverlay = document.createElement("div");
+    modalImgOverlay.classList.add("modal-image-overlay");
+
+    const modalImgOverlayText = document.createElement("div");
+    modalImgOverlayText.classList.add("modal-image-overlay-text");
+    modalImgOverlayText.textContent = imageAscii;
+
+    modalImgOverlay.appendChild(modalImgOverlayText);
+
+    let isAsciiVisible = false;
+    modalImgOverlay.addEventListener("click", () => {
+      isAsciiVisible = !isAsciiVisible;
+      modalImgOverlayText.style.opacity = isAsciiVisible ? "1" : "0";
+      modalImgOverlayText.style.backgroundColor = isAsciiVisible
+        ? "rgba(0,0,0,0.7)"
+        : "rgba(0,0,0,0)";
+    });
+
+    imageContainer.appendChild(modalImg);
+    imageContainer.appendChild(modalImgOverlay);
 
     const infoContainer = document.createElement("div");
     infoContainer.classList.add("info-container");
@@ -143,6 +217,15 @@ images.forEach((image, index) => {
     downloadButton.textContent = "Download Image";
     downloadButton.classList.add("button", "download-button");
 
+    const copyAsciiButton = document.createElement("button");
+    copyAsciiButton.textContent = "Copy ASCII Art";
+    copyAsciiButton.classList.add("button", "copy-ascii-button");
+    copyAsciiButton.addEventListener("click", () => {
+      navigator.clipboard.writeText(imageAscii);
+      copyAsciiButton.textContent = "ASCII Copied!";
+      setTimeout(() => (copyAsciiButton.textContent = "Copy ASCII Art"), 2000);
+    });
+
     const closeButton = document.createElement("button");
     closeButton.textContent = "Close";
     closeButton.classList.add("button", "close-button");
@@ -185,11 +268,12 @@ images.forEach((image, index) => {
 
     buttonContainer.appendChild(copyButton);
     buttonContainer.appendChild(downloadButton);
+    buttonContainer.appendChild(copyAsciiButton);
     buttonContainer.appendChild(closeButton);
 
-    modal.appendChild(modalImg);
-    modal.appendChild(leftSideContainer);
+    modal.appendChild(imageContainer);
     modal.appendChild(infoContainer);
+    modal.appendChild(leftSideContainer);
     modal.appendChild(rightSideContainer);
     modal.appendChild(buttonContainer);
     document.body.appendChild(modal);
